@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Project USA Master Plan — Progress Dashboard</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --status-good:    #0ca30c;
+    --status-warning: #fab219;
+    --status-pending: #898781;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --status-good:    #0ca30c;
+      --status-warning: #fab219;
+      --status-pending: #898781;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --status-good:    #0ca30c;
+    --status-warning: #fab219;
+    --status-pending: #898781;
+  }
+
+  .viz-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    padding: 28px 20px 48px;
+    max-width: 980px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+  .viz-root * { box-sizing: border-box; }
+
+  .header { margin-bottom: 24px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 6px;
+  }
+  h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; }
+  .header p { font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); margin: 0 0 10px; max-width: 68ch; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--text-muted); }
+  .meta-row a { color: var(--series-1); text-decoration: none; }
+  .meta-row a:hover { text-decoration: underline; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { padding: 16px; }
+  .stat .label { font-size: 11.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .stat .value { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .stat .sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .ring-wrap { display: flex; align-items: center; gap: 12px; }
+  .ring-wrap .value { font-size: 22px; }
+
+  section { margin-bottom: 26px; }
+  .section-title { font-size: 14px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: baseline; gap: 8px; }
+  .section-title .count { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+
+  /* Gate stepper */
+  .gates { padding: 20px 16px 16px; overflow-x: auto; }
+  .gate-track { display: flex; align-items: flex-start; min-width: 640px; }
+  .gate { flex: 1; text-align: center; position: relative; padding: 0 4px; }
+  .gate .line {
+    position: absolute; top: 13px; left: -50%; width: 100%; height: 2px; background: var(--gridline); z-index: 0;
+  }
+  .gate:first-child .line { display: none; }
+  .gate .line.cleared { background: var(--status-good); }
+  .dot {
+    width: 26px; height: 26px; border-radius: 50%; margin: 0 auto 8px; position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+    border: 2px solid var(--gridline); background: var(--surface-1); color: var(--text-muted);
+  }
+  .dot.cleared { background: var(--status-good); border-color: var(--status-good); color: #fff; }
+  .dot.next { background: var(--surface-1); border-color: var(--status-warning); color: var(--status-warning); }
+  .gate .gname { font-size: 11.5px; font-weight: 700; color: var(--text-primary); }
+  .gate .gstate { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .gate .gstate.cleared { color: var(--status-good); }
+  .gate .gstate.next { color: var(--status-warning); font-weight: 600; }
+  .gate .gdesc { font-size: 10.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.35; display: none; }
+  .gate .gdue { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; }
+
+  /* Phase rows */
+  .phase-key { font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px; display: flex; gap: 16px; align-items: center; }
+  .key-swatch { display: inline-flex; align-items: center; gap: 5px; }
+  .key-swatch i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .phase-list { display: flex; flex-direction: column; gap: 10px; }
+  .phase { padding: 14px 16px; }
+  .phase summary { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+  .phase summary::-webkit-details-marker { display: none; }
+  .phase-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .phase-name { font-size: 13.5px; font-weight: 700; }
+  .phase-frac { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+  .bar-track { height: 8px; border-radius: 4px; background: var(--gridline); overflow: hidden; display: flex; }
+  .bar-fill { height: 100%; background: var(--series-1); border-radius: 4px; }
+  .phase-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-muted); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { background: var(--page-plane); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; font-size: 10.5px; color: var(--text-secondary); }
+  .phase .caret { font-size: 10px; color: var(--text-muted); }
+  .phase[open] .caret { transform: rotate(90deg); }
+
+  .task-list { margin-top: 12px; border-top: 1px solid var(--gridline); padding-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  .task-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .task-row .tdot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .task-row .tdot.done { background: var(--status-good); }
+  .task-row .tdot.progress { background: var(--status-warning); }
+  .task-row .tdot.todo { background: var(--gridline); border: 1px solid var(--baseline); }
+  .task-row .tname { flex: 1; min-width: 0; color: var(--text-primary); }
+  .task-row .tname.done { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--gridline); }
+  .task-row .tmeta { color: var(--text-muted); white-space: nowrap; font-size: 11px; }
+
+  /* Attention + upcoming */
+  .flex-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { padding: 16px; }
+  .panel .ptitle { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .attn-item { display: flex; gap: 8px; font-size: 12.5px; line-height: 1.5; margin-bottom: 10px; }
+  .attn-item:last-child { margin-bottom: 0; }
+  .attn-item .adot { width: 8px; height: 8px; border-radius: 50%; background: var(--status-warning); margin-top: 5px; flex: none; }
+  .attn-item b { font-weight: 600; }
+  .attn-item span.d { color: var(--text-muted); }
+  .ok-note { font-size: 12.5px; color: var(--text-secondary); display: flex; gap: 8px; align-items: flex-start; }
+  .ok-note .gdot { width: 8px; height: 8px; border-radius: 50%; background: var(--status-good); margin-top: 5px; flex: none; }
+
+  .upcoming-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 7px 0; border-bottom: 1px solid var(--gridline); }
+  .upcoming-row:last-child { border-bottom: none; }
+  .upcoming-row .uname { color: var(--text-primary); }
+  .upcoming-row .uphase { color: var(--text-muted); font-size: 11px; }
+  .upcoming-row .udate { color: var(--text-secondary); white-space: nowrap; font-weight: 600; }
+
+  footer { font-size: 11.5px; color: var(--text-muted); border-top: 1px solid var(--gridline); padding-top: 14px; margin-top: 8px; }
+  footer a { color: var(--series-1); text-decoration: none; }
+
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .flex-2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+</head>
+<style>body{margin:0;background:#f9f9f7}@media (prefers-color-scheme:dark){body{background:#0d0d0d}}</style>
+<body>
+<div class="viz-root">
+
+  <div class="header">
+    <p class="eyebrow">Asana · Project USA Master Plan</p>
+    <h1>US Market Entry — Overall Progress</h1>
+    <p>Structured on the Market Entry Process Model v0.2 (8 gated phases, 35 core steps). Each phase closes with a GATE decision before spend moves to the next phase; Phase 8 holds execution workstreams that sit outside the gate model.</p>
+    <div class="meta-row">
+      <span>Owner: Hester Tingey</span>
+      <span>Team due date: Mar 31, 2027</span>
+      <span>As of Jul 17, 2026</span>
+      <a href="https://app.asana.com/1/1199410258015502/project/1216407489310591" target="_blank" rel="noopener">Open in Asana ↗</a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="card stat">
+      <div class="label">Overall complete</div>
+      <div class="ring-wrap">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--gridline)" stroke-width="6"/>
+          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--series-1)" stroke-width="6"
+            stroke-dasharray="113.1" stroke-dashoffset="92.7" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+        </svg>
+        <div>
+          <div class="value">18%</div>
+          <div class="sub">9 of 50 tasks</div>
+        </div>
+      </div>
+    </div>
+    <div class="card stat">
+      <div class="label">Gates cleared</div>
+      <div class="value">2 <span style="font-size:15px;color:var(--text-muted);font-weight:500;">/ 8</span></div>
+      <div class="sub">Next: GATE 2 — Positioning</div>
+    </div>
+    <div class="card stat">
+      <div class="label">Current phase</div>
+      <div class="value" style="font-size:18px;">Phase 2</div>
+      <div class="sub">Competitive &amp; Positioning</div>
+    </div>
+    <div class="card stat">
+      <div class="label">Next deadline</div>
+      <div class="value" style="font-size:18px;">Aug 10</div>
+      <div class="sub">Season Plan Signed Off</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-title">Gate tracker <span class="count">8 decision gates</span></div>
+    <div class="card gates">
+      <div class="gate-track">
+
+        <div class="gate">
+          <div class="dot cleared">✓</div>
+          <div class="gname">GATE 0</div>
+          <div class="gstate cleared">Cleared</div>
+        </div>
+
+        <div class="gate">
+          <div class="line cleared"></div>
+          <div class="dot cleared">✓</div>
+          <div class="gname">GATE 1</div>
+          <div class="gstate cleared">Cleared</div>
+        </div>
+
+        <div class="gate">
+          <div class="line"></div>
+          <div class="dot next">●</div>
+          <div class="gname">GATE 2</div>
+          <div class="gstate next">Up next</div>
+          <div class="gdue">Due Sep 4, 2026</div>
+        </div>
+
+        <div class="gate">
+          <div class="line"></div>
+          <div class="dot">3</div>
+          <div class="gname">GATE 3</div>
+          <div class="gstate">Pending</div>
+          <div class="gdue">Sep 25, 2026</div>
+        </div>
+
+        <div class="gate">
+          <div class="line"></div>
+          <div class="dot">4</div>
+          <div class="gname">GATE 4</div>
+          <div class="gstate">Pending</div>
+          <div class="gdue">Oct 9, 2026</div>
+        </div>
+
+        <div class="gate">
+          <div class="line"></div>
+          <div class="dot">5</div>
+          <div class="gname">GATE 5</div>
+          <div class="gstate">Pending</div>
+          <div class="gdue">Oct 30, 2026</div>
+        </div>
+
+        <div class="gate">
+          <div class="line"></div>
+          <div class="dot">6</div>
+          <div class="gname">GATE 6</div>
+          <div class="gstate">Pending</div>
+          <div class="gdue">Nov 20, 2026</div>
+        </div>
+
+        <div class="gate">
+          <div class="line"></div>
+          <div class="dot">7</div>
+          <div class="gname">GATE 7</div>
+          <div class="gstate">Pending</div>
+          <div class="gdue">Mar 19, 2027</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">Progress by phase <span class="count">50 tasks across 9 sections</span></div>
+    <div class="phase-key">
+      <span class="key-swatch"><i style="background:var(--series-1);"></i> complete</span>
+      <span class="key-swatch"><i style="background:var(--gridline);border:1px solid var(--baseline);"></i> remaining</span>
+      <span style="color:var(--text-muted);">— tap a phase to see its tasks</span>
+    </div>
+    <div class="phase-list">
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 0 · Market Selection &amp; Sequencing</span><span class="phase-frac">5 / 6 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:83%;"></div></div>
+          <div class="phase-foot"><span>Due Jul 24, 2026</span><span class="chips"><span class="chip">CEO</span><span class="chip">CFO</span><span class="chip">COO</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">Comparative market sizing</span><span class="tmeta">Marshall Maine · done</span></div>
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">Trade-barrier / tariff analysis → sequencing</span><span class="tmeta">Marshall Maine · done</span></div>
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">Global expansion market ranking</span><span class="tmeta">done</span></div>
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">Beachhead + secondary geography selection</span><span class="tmeta">done</span></div>
+          <div class="task-row"><span class="tdot progress"></span><span class="tname">Trademark Registration</span><span class="tmeta">Marshall Maine · in progress</span></div>
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">GATE 0 · Right market, right order, right beachhead?</span><span class="tmeta">done</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 1 · Demand &amp; Customer Intelligence</span><span class="phase-frac">3 / 4 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:75%;"></div></div>
+          <div class="phase-foot"><span>Due Aug 14, 2026</span><span class="chips"><span class="chip">Product Design Lead</span><span class="chip">CFO</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">Regional usage &amp; hunting-culture research + Core buyer persona definition</span><span class="tmeta">done</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Tag-economy / regulatory demand context</span><span class="tmeta">due Aug 14</span></div>
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">TAM / SAM / SOM model</span><span class="tmeta">Marshall Maine · done</span></div>
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">GATE 1 · Is demand real and big enough?</span><span class="tmeta">done</span></div>
+        </div>
+      </details>
+
+      <details class="phase card" open>
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 2 · Competitive &amp; Positioning</span><span class="phase-frac">0 / 6 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div>
+          <div class="phase-foot"><span>Due Aug 10 – Sep 30, 2026</span><span class="chips"><span class="chip">Marketing Lead</span><span class="chip">Product Design Lead</span><span class="chip">Sales &amp; Channel Lead</span><span class="chip">Head of E-Com</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Season Plan Signed Off</span><span class="tmeta">due Aug 10</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Competitive landscape map</span><span class="tmeta">due Sep 4</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Product-market fit: colour, camo &amp; range strategy</span><span class="tmeta">due Sep 4</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Navigation / site architecture straw man</span><span class="tmeta">due Sep 4</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Pricing</span><span class="tmeta">due Sep 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">GATE 2 · Defensible position and right launch range?</span><span class="tmeta">due Sep 4</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 3 · Channel &amp; Route-to-Market</span><span class="phase-frac">0 / 5 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div>
+          <div class="phase-foot"><span>Due Sep 25, 2026</span><span class="chips"><span class="chip">Sales &amp; Channel Lead</span><span class="chip">CEO</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Anchor door identification</span><span class="tmeta">due Sep 25</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Sales agency / rep evaluation</span><span class="tmeta">due Sep 25</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Retail scouting &amp; canvassing tool</span><span class="tmeta">due Sep 25</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Channel model decision</span><span class="tmeta">due Sep 25</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">GATE 3 · Route to market viable and partnered?</span><span class="tmeta">due Sep 25</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 4 · Financial Model &amp; Budget</span><span class="phase-frac">1 / 5 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:20%;"></div></div>
+          <div class="phase-foot"><span>Due Oct 9, 2026</span><span class="chips"><span class="chip">CFO</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot done"></span><span class="tname done">Budget envelope &amp; allocation</span><span class="tmeta">Marshall Maine · done</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Legal Sign Off</span><span class="tmeta">Marshall Maine · due Oct 9</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Multi-year SOM trajectory</span><span class="tmeta">Marshall Maine · due Oct 9</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Year-1 revenue scenario model</span><span class="tmeta">Marshall Maine · due Oct 9</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">GATE 4 · Do the numbers clear our investment hurdle?</span><span class="tmeta">Marshall Maine · due Oct 9</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 5 · Planning &amp; Sequencing</span><span class="phase-frac">0 / 5 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div>
+          <div class="phase-foot"><span>Due Oct 30, 2026</span><span class="chips"><span class="chip">CEO</span><span class="chip">Sales &amp; Channel Lead</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Master timeline / Gantt</span><span class="tmeta">due Oct 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Strategy one-pager / exec alignment</span><span class="tmeta">due Oct 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Pre-book / order-window calendar</span><span class="tmeta">due Oct 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Launch planning workbook</span><span class="tmeta">due Oct 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">GATE 5 · Baselined, board-signed plan with locked launch date?</span><span class="tmeta">due Oct 30</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 6 · Org &amp; Capability</span><span class="phase-frac">0 / 4 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div>
+          <div class="phase-foot"><span>Due Nov 20, 2026</span><span class="chips"><span class="chip">CEO</span><span class="chip">Marketing Lead</span><span class="chip">Head of Product</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Org design across growth stages</span><span class="tmeta">due Nov 20</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Decision-support tooling</span><span class="tmeta">due Nov 20</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Role definitions / hiring</span><span class="tmeta">due Nov 20</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">GATE 6 · Can the organisation actually execute it?</span><span class="tmeta">due Nov 20</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 7 · Operational &amp; Launch Readiness</span><span class="phase-frac">0 / 10 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div>
+          <div class="phase-foot"><span>Due Jan 16 – Mar 19, 2027</span><span class="chips"><span class="chip">CEO</span><span class="chip">CFO</span><span class="chip">COO</span><span class="chip">Supply Chain Lead</span><span class="chip">Head of E-Com</span><span class="chip">Marketing Lead</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Tax registration &amp; nexus</span><span class="tmeta">due Jan 16</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Regulatory &amp; product compliance</span><span class="tmeta">due Jan 16</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">IP / trademark registration</span><span class="tmeta">due Jan 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Logistics &amp; fulfilment setup</span><span class="tmeta">due Feb 13</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Milestone: USA site live</span><span class="tmeta">due Feb 1</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Site &amp; commerce localisation</span><span class="tmeta">due Feb 27</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Marketing launch plan</span><span class="tmeta">due Feb 27</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Kill / scale criteria</span><span class="tmeta">due Mar 12</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Post-launch measurement</span><span class="tmeta">due Mar 12</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">GATE 7 · Legally, operationally and commercially ready to go live?</span><span class="tmeta">due Mar 19</span></div>
+        </div>
+      </details>
+
+      <details class="phase card">
+        <summary>
+          <div class="phase-top"><span class="phase-name">Phase 8 · Execution Workstreams</span><span class="phase-frac">0 / 5 done</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;"></div></div>
+          <div class="phase-foot"><span>Due Jan 30 – Mar 12, 2027</span><span class="chips"><span class="chip">Unassigned owner</span></span></div>
+        </summary>
+        <div class="task-list">
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Company setup, banking &amp; systems (Cin7)</span><span class="tmeta">due Jan 30</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Sales enablement &amp; trade shows</span><span class="tmeta">due Feb 27</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Content &amp; social engine</span><span class="tmeta">due Mar 12</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">Amazon channel launch</span><span class="tmeta">due Mar 12</span></div>
+          <div class="task-row"><span class="tdot todo"></span><span class="tname">PR &amp; press</span><span class="tmeta">due Mar 12</span></div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <div class="flex-2">
+    <section class="card panel">
+      <div class="ptitle">⚠ Needs attention</div>
+      <div class="attn-item">
+        <span class="adot"></span>
+        <span><b>Trademark Registration</b> (Phase 0) is marked <b>In Progress</b> with no due date, even though GATE 0 already cleared. <span class="d">Assignee: Marshall Maine.</span></span>
+      </div>
+      <div class="ok-note" style="margin-top:12px;">
+        <span class="gdot"></span>
+        <span>No incomplete tasks are currently past their due date — the earliest open item is due Aug 10, 2026.</span>
+      </div>
+    </section>
+
+    <section class="card panel">
+      <div class="ptitle">Upcoming deadlines</div>
+      <div class="upcoming-row"><div><div class="uname">Season Plan Signed Off</div><div class="uphase">Phase 2</div></div><div class="udate">Aug 10</div></div>
+      <div class="upcoming-row"><div><div class="uname">Tag-economy / regulatory demand context</div><div class="uphase">Phase 1</div></div><div class="udate">Aug 14</div></div>
+      <div class="upcoming-row"><div><div class="uname">Competitive landscape map</div><div class="uphase">Phase 2</div></div><div class="udate">Sep 4</div></div>
+      <div class="upcoming-row"><div><div class="uname">Product-market fit: colour, camo &amp; range strategy</div><div class="uphase">Phase 2</div></div><div class="udate">Sep 4</div></div>
+      <div class="upcoming-row"><div><div class="uname">GATE 2 decision</div><div class="uphase">Phase 2</div></div><div class="udate">Sep 4</div></div>
+    </section>
+  </div>
+
+  <footer>
+    Source: Asana project <a href="https://app.asana.com/1/1199410258015502/project/1216407489310591" target="_blank" rel="noopener">Project USA Master Plan</a> (workspace Evolve Outdoors). Snapshot reflects data as of Jul 17, 2026 — reload this dashboard build to refresh.
+  </footer>
+
+</div>
+
+</body>
+</html>
