@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Project USA — Gate Tracker</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #f9f9f7;
+    display: flex; align-items: center; justify-content: center;
+  }
+  @media (prefers-color-scheme: dark) { body { background: #0d0d0d; } }
+
+  .widget-root {
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --border:         rgba(11,11,11,0.10);
+    --status-good:    #0ca30c;
+    --status-warning: #fab219;
+  }
+  @media (prefers-color-scheme: dark) {
+    .widget-root {
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --border:         rgba(255,255,255,0.10);
+      --status-good:    #0ca30c;
+      --status-warning: #fab219;
+    }
+  }
+
+  .widget-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px 16px;
+    box-sizing: border-box;
+    width: calc(100% - 24px);
+    max-width: 760px;
+  }
+  .widget-root * { box-sizing: border-box; }
+
+  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; flex-wrap: wrap; gap: 6px; }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--text-muted); margin: 0;
+  }
+  .count { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .count span { font-weight: 500; color: var(--text-muted); }
+
+  .gate-track { display: flex; align-items: flex-start; overflow-x: auto; }
+  .gate { flex: 1; min-width: 68px; text-align: center; position: relative; padding: 0 4px; }
+  .gate .line {
+    position: absolute; top: 13px; left: -50%; width: 100%; height: 2px; background: var(--gridline); z-index: 0;
+  }
+  .gate:first-child .line { display: none; }
+  .gate .line.cleared { background: var(--status-good); }
+  .dot {
+    width: 26px; height: 26px; border-radius: 50%; margin: 0 auto 8px; position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+    border: 2px solid var(--gridline); background: var(--surface-1); color: var(--text-muted);
+  }
+  .dot.cleared { background: var(--status-good); border-color: var(--status-good); color: #fff; }
+  .dot.next { background: var(--surface-1); border-color: var(--status-warning); color: var(--status-warning); }
+  .gname { font-size: 11.5px; font-weight: 700; color: var(--text-primary); }
+  .gstate { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .gstate.cleared { color: var(--status-good); }
+  .gstate.next { color: var(--status-warning); font-weight: 600; }
+  .gdue { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+  <div class="widget-root">
+    <div class="head">
+      <p class="eyebrow">Project USA · Gate Tracker</p>
+      <div class="count">2 <span>/ 8 cleared</span></div>
+    </div>
+    <div class="gate-track">
+
+      <div class="gate">
+        <div class="dot cleared">✓</div>
+        <div class="gname">GATE 0</div>
+        <div class="gstate cleared">Cleared</div>
+      </div>
+
+      <div class="gate">
+        <div class="line cleared"></div>
+        <div class="dot cleared">✓</div>
+        <div class="gname">GATE 1</div>
+        <div class="gstate cleared">Cleared</div>
+      </div>
+
+      <div class="gate">
+        <div class="line"></div>
+        <div class="dot next">●</div>
+        <div class="gname">GATE 2</div>
+        <div class="gstate next">Up next</div>
+        <div class="gdue">Sep 4, 2026</div>
+      </div>
+
+      <div class="gate">
+        <div class="line"></div>
+        <div class="dot">3</div>
+        <div class="gname">GATE 3</div>
+        <div class="gstate">Pending</div>
+        <div class="gdue">Sep 25, 2026</div>
+      </div>
+
+      <div class="gate">
+        <div class="line"></div>
+        <div class="dot">4</div>
+        <div class="gname">GATE 4</div>
+        <div class="gstate">Pending</div>
+        <div class="gdue">Oct 9, 2026</div>
+      </div>
+
+      <div class="gate">
+        <div class="line"></div>
+        <div class="dot">5</div>
+        <div class="gname">GATE 5</div>
+        <div class="gstate">Pending</div>
+        <div class="gdue">Oct 30, 2026</div>
+      </div>
+
+      <div class="gate">
+        <div class="line"></div>
+        <div class="dot">6</div>
+        <div class="gname">GATE 6</div>
+        <div class="gstate">Pending</div>
+        <div class="gdue">Nov 20, 2026</div>
+      </div>
+
+      <div class="gate">
+        <div class="line"></div>
+        <div class="dot">7</div>
+        <div class="gname">GATE 7</div>
+        <div class="gstate">Pending</div>
+        <div class="gdue">Mar 19, 2027</div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
